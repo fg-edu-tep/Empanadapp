@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Empanada Debt 🍽️</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:#faf9f7;color:#222}
+    header{background:#ffd166;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+    h1{margin:0;font-size:20px}
+    main{max-width:900px;margin:24px auto;padding:0 16px}
+    .card{background:#fff;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.06);padding:16px;margin-bottom:16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    input,button,select,textarea{padding:10px 12px;border-radius:10px;border:1px solid #ddd;font:inherit}
+    button{cursor:pointer;border:0;background:#06d6a0;color:#073b4c;font-weight:600}
+    button.secondary{background:#118ab2;color:#fff}
+    button.warn{background:#ef476f}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid #eee;font-size:14px}
+    th{text-align:left;color:#555}
+    .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eee;font-size:12px}
+    .status-pending{background:#ffe8a1}
+    .status-half{background:#cdeffd}
+    .status-settled{background:#c6f6d5}
+    .muted{color:#666;font-size:12px}
+  </style>
+</head>
+<body>
+  <header><h1>Empanada Debt 🍽️</h1></header>
+  <main>
+    <section id="auth" class="card">
+      <h3>Login / Register</h3>
+      <div class="row">
+        <input id="fullName" placeholder="Full name (for register)" />
+        <input id="llave" placeholder="Llave (6 chars, e.g. AREPA1)" maxlength="6" />
+        <button id="btnLogin" class="secondary">Login</button>
+        <button id="btnRegister">Register</button>
+      </div>
+      <p class="muted">Tip: llave is your simple code. Share it with friends so they can send or request empanadas.</p>
+      <p id="me" class="muted"></p>
+    </section>
+
+    <section class="card">
+      <h3>Send a pending empanada</h3>
+      <div class="row">
+        <input id="toLlave" placeholder="Recipient llave (e.g. TACO42)" maxlength="6" />
+        <input id="sendQty" type="number" value="1" min="1" style="width:80px" />
+        <input id="sendMsg" placeholder="Message (optional)" />
+        <button id="btnSend">Send</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>Request an empanada</h3>
+      <div class="row">
+        <input id="fromLlave" placeholder="Who should owe you? (llave)" maxlength="6" />
+        <input id="reqQty" type="number" value="1" min="1" style="width:80px" />
+        <input id="reqMsg" placeholder="Message (optional)" />
+        <button id="btnRequest" class="secondary">Request</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>Your stats</h3>
+      <div id="stats"></div>
+    </section>
+
+    <section class="card">
+      <h3>All your debts</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Who owes whom</th>
+            <th>Qty</th>
+            <th>Message</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="debts"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    const $ = (s) => document.querySelector(s);
+    let me = null;
+    let authHeaders = () => me ? { 'X-LLAVE': me.llave } : {};
+
+    function fmtDate(iso){ const d = new Date(iso); return d.toLocaleString(); }
+    function statusPill(d){
+      if (d.settled_at) return '<span class="pill status-settled">settled</span>';
+      if (d.sender_marked_paid || d.recipient_marked_paid) return '<span class="pill status-half">half-marked</span>';
+      return '<span class="pill status-pending">pending</span>';
+    }
+
+    async function login() {
+      const llave = $('#llave').value.trim().toUpperCase();
+      if (!/^[A-Z0-9]{6}$/.test(llave)) return alert('Llave must be 6 chars [A-Z0-9].');
+      const r = await fetch('/api/users/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({llave})});
+      if (!r.ok) return alert('Unknown llave');
+      me = await r.json();
+      $('#me').textContent = `Logged in as ${me.full_name} (${me.llave})`;
+      localStorage.setItem('llave', me.llave);
+      renderAll();
+    }
+
+    async function register() {
+      const full_name = $('#fullName').value.trim();
+      const llave = $('#llave').value.trim().toUpperCase();
+      if (!full_name) return alert('Full name required');
+      if (!/^[A-Z0-9]{6}$/.test(llave)) return alert('Llave must be 6 chars [A-Z0-9].');
+      const r = await fetch('/api/users/register', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({full_name, llave})});
+      const body = await r.json();
+      if (!r.ok) return alert(body.error || 'Register failed');
+      me = body;
+      $('#me').textContent = `Registered as ${me.full_name} (${me.llave})`;
+      localStorage.setItem('llave', me.llave);
+      renderAll();
+    }
+
+    async function listDebts(){
+      if (!me) return;
+      const r = await fetch('/api/debts', { headers: authHeaders() });
+      const debts = await r.json();
+      $('#debts').innerHTML = debts.map(d => `
+        <tr>
+          <td>${fmtDate(d.created_at)}</td>
+          <td>
+            <strong>${d.sender.full_name} (${d.sender.llave})</strong>
+            owes
+            <strong>${d.recipient.full_name} (${d.recipient.llave})</strong>
+          </td>
+          <td>${d.qty}</td>
+          <td>${d.message || ''}</td>
+          <td>${statusPill(d)}</td>
+          <td>
+            ${!d.settled_at ? `<button data-id="${d.id}" class="mark">Mark paid</button>` : ''}
+            ${(!d.settled_at && ((d.sender.llave===me.llave && d.sender_marked_paid) || (d.recipient.llave===me.llave && d.recipient_marked_paid))) ? `<button data-id="${d.id}" class="unmark warn">Undo my mark</button>` : ''}
+          </td>
+        </tr>
+      `).join('');
+
+      document.querySelectorAll('button.mark').forEach(b=>b.onclick = async (e)=>{
+        const id = b.getAttribute('data-id');
+        const r = await fetch(`/api/debts/${id}/mark`, {method:'POST', headers: { ...authHeaders(), 'Content-Type':'application/json' }});
+        if (!r.ok) { const body = await r.json(); return alert(body.error || 'Error'); }
+        renderAll();
+      });
+
+      document.querySelectorAll('button.unmark').forEach(b=>b.onclick = async (e)=>{
+        const id = b.getAttribute('data-id');
+        const r = await fetch(`/api/debts/${id}/unmark`, {method:'POST', headers: { ...authHeaders(), 'Content-Type':'application/json' }});
+        if (!r.ok) { const body = await r.json(); return alert(body.error || 'Error'); }
+        renderAll();
+      });
+    }
+
+    async function sendDebt(){
+      const to_llave = $('#toLlave').value.trim().toUpperCase();
+      const qty = parseInt($('#sendQty').value || '1', 10);
+      const message = $('#sendMsg').value.trim();
+      if (!/^[A-Z0-9]{6}$/.test(to_llave)) return alert('Recipient llave must be 6 chars');
+      const r = await fetch('/api/debts/send', {method:'POST', headers:{...authHeaders(), 'Content-Type':'application/json'}, body:JSON.stringify({to_llave, qty, message})});
+      const body = await r.json();
+      if (!r.ok) return alert(body.error || 'Send failed');
+      $('#toLlave').value=''; $('#sendQty').value='1'; $('#sendMsg').value='';
+      renderAll();
+    }
+
+    async function requestDebt(){
+      const from_llave = $('#fromLlave').value.trim().toUpperCase();
+      const qty = parseInt($('#reqQty').value || '1', 10);
+      const message = $('#reqMsg').value.trim();
+      if (!/^[A-Z0-9]{6}$/.test(from_llave)) return alert('Llave must be 6 chars');
+      const r = await fetch('/api/debts/request', {method:'POST', headers:{...authHeaders(), 'Content-Type':'application/json'}, body:JSON.stringify({from_llave, qty, message})});
+      const body = await r.json();
+      if (!r.ok) return alert(body.error || 'Request failed');
+      $('#fromLlave').value=''; $('#reqQty').value='1'; $('#reqMsg').value='';
+      renderAll();
+    }
+
+    async function loadStats(){
+      if (!me) return $('#stats').innerHTML = '';
+      const r = await fetch('/api/stats/me', { headers: authHeaders() });
+      const s = await r.json();
+
+      const rows = Object.entries(s.perFriend).map(([ll, v])=>{
+        return `<tr><td>${v.name} (${ll})</td><td>${v.iOwe}</td><td>${v.oweMe}</td><td>${v.oweMe - v.iOwe}</td></tr>`;
+      }).join('');
+
+      $('#stats').innerHTML = `
+        <p><strong>I owe:</strong> ${s.iOwe} • <strong>Owe me:</strong> ${s.oweMe} • <strong>Net:</strong> ${s.net}</p>
+        <table>
+          <thead><tr><th>Friend</th><th>I owe</th><th>Owe me</th><th>Net</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="4">No pending debts 🎉</td></tr>'}</tbody>
+        </table>`;
+    }
+
+    async function renderAll(){
+      await Promise.all([listDebts(), loadStats()]);
+    }
+
+    // wire
+    $('#btnLogin').onclick = login;
+    $('#btnRegister').onclick = register;
+    $('#btnSend').onclick = sendDebt;
+    $('#btnRequest').onclick = requestDebt;
+
+    // auto login from localStorage
+    const saved = localStorage.getItem('llave');
+    if (saved) { $('#llave').value = saved; login(); }
+  </script>
+</body>
+</html>
