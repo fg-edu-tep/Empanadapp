@@ -1,216 +1,417 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Empanada Debt 🍽️</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>EmpanadApp 🥟</title>
+  <meta name="color-scheme" content="light dark" />
   <style>
-    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:#faf9f7;color:#222}
-    header{background:#ffd166;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-    h1{margin:0;font-size:20px}
-    main{max-width:900px;margin:24px auto;padding:0 16px}
-    .card{background:#fff;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.06);padding:16px;margin-bottom:16px}
-    .row{display:flex;gap:12px;flex-wrap:wrap}
-    input,button,select,textarea{padding:10px 12px;border-radius:10px;border:1px solid #ddd;font:inherit}
-    button{cursor:pointer;border:0;background:#06d6a0;color:#073b4c;font-weight:600}
-    button.secondary{background:#118ab2;color:#fff}
-    button.warn{background:#ef476f}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:10px;border-bottom:1px solid #eee;font-size:14px}
-    th{text-align:left;color:#555}
-    .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eee;font-size:12px}
-    .status-pending{background:#ffe8a1}
-    .status-half{background:#cdeffd}
-    .status-settled{background:#c6f6d5}
-    .muted{color:#666;font-size:12px}
+    :root{
+      --bg:#fffaf2;
+      --surface:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --brand:#ffb703;      /* amarillo empanada */
+      --brand-2:#fb8500;    /* naranja tostión */
+      --ok:#06d6a0;
+      --warn:#ef476f;
+      --info:#219ebc;
+      --ring: 0 0 0 4px rgba(251,133,0,.15);
+      --radius:16px;
+      --shadow:0 10px 30px rgba(0,0,0,.08);
+    }
+    * { box-sizing: border-box }
+    html,body{ height:100% }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      background:linear-gradient(180deg,var(--bg),#fff);
+    }
+
+    /* App Shell */
+    header{
+      position:sticky; top:0; z-index:10;
+      display:flex; align-items:center; gap:12px;
+      padding:14px 18px env(safe-area-inset-right) 14px env(safe-area-inset-left);
+      background:linear-gradient(180deg,#ffe29a 0%, #ffd166 100%);
+      box-shadow: 0 6px 20px rgba(0,0,0,.08);
+    }
+    .logo{
+      width:34px;height:34px; border-radius:50%;
+      background: radial-gradient(120% 120% at 20% 10%, #ffe29a 0%, #ffbb55 70%, #fb8500 100%);
+      display:grid; place-items:center; color:#703b00; font-weight:900;
+      box-shadow: inset 0 2px 4px rgba(255,255,255,.6), inset 0 -2px 6px rgba(0,0,0,.08);
+    }
+    .brand{ font-weight:800; letter-spacing:.2px; }
+    main{ max-width:980px; margin:16px auto; padding:0 12px 24px; }
+    .card{
+      background:var(--surface); border-radius:var(--radius);
+      box-shadow: var(--shadow); padding:16px; margin:12px 0;
+    }
+
+    /* Forms */
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
+    .stack{ display:flex; flex-direction:column; gap:10px; }
+    label{ font-size:.9rem; color:var(--muted) }
+    input,button,textarea,select{
+      width:100%; padding:12px 14px;
+      border:1px solid #e5e7eb; border-radius:12px;
+      font:inherit; background:#fff;
+    }
+    input:focus, textarea:focus, select:focus{ outline:none; box-shadow:var(--ring); border-color:#f59e0b; }
+    button{
+      cursor:pointer; border:0; font-weight:700;
+      background:var(--brand-2); color:#2b1600;
+      transition: transform .02s ease, box-shadow .2s ease;
+      box-shadow: 0 6px 16px rgba(251,133,0,.25);
+    }
+    button:active{ transform: translateY(1px) }
+    .secondary{ background:var(--info); color:#fff; }
+    .ghost{ background:transparent; border:1px dashed #e5e7eb; color:var(--muted) }
+    .ok{ background:var(--ok); color:#053b2f }
+    .warn{ background:var(--warn); color:#fff }
+
+    /* Table */
+    table{ width:100%; border-collapse:collapse }
+    th,td{ padding:12px 8px; border-bottom:1px solid #f1f5f9; font-size:.95rem }
+    th{ text-align:left; color:#475569 }
+    .pill{ display:inline-block; padding:4px 10px; border-radius:999px; font-size:.8rem; }
+    .status-pending{ background:#fff2c6 }
+    .status-half{ background:#e0f2fe }
+    .status-settled{ background:#dcfce7 }
+
+    .muted{ color:var(--muted); font-size:.9rem }
+    .space{ height:4px }
+
+    /* Nav for app view */
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; margin-bottom:8px;
+    }
+    .hello{ font-weight:800 }
+    .kebab{ font-size:1.15rem; background:transparent; border:0; padding:8px; }
+
+    /* Responsive */
+    @media (min-width:720px){
+      .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    }
+    @media (min-width:980px){
+      main{ padding:0 16px 32px }
+    }
+
+    /* Tabs on auth */
+    .tabs{ display:flex; gap:8px; background:#fff; border-radius:12px; padding:6px; box-shadow: var(--shadow); }
+    .tab{
+      flex:1; text-align:center; font-weight:800; padding:10px 12px; border-radius:10px;
+      border:1px solid transparent; background: #fff7ed;
+    }
+    .tab.active{ background:#ffedd5; border-color:#fed7aa }
+
+    /* Toast */
+    .toast{
+      position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+      background:#111827; color:#fff; padding:12px 16px; border-radius:12px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.25); opacity:0; pointer-events:none; transition: opacity .25s ease, transform .25s ease;
+    }
+    .toast.show{ opacity:1; transform: translateX(-50%) translateY(-4px) }
+
+    /* Hide/Show views */
+    [hidden]{ display:none !important }
   </style>
 </head>
 <body>
-  <header><h1>Empanada Debt 🍽️</h1></header>
+  <header>
+    <div class="logo">🥟</div>
+    <div class="brand">EmpanadApp</div>
+  </header>
+
   <main>
-    <section id="auth" class="card">
-      <h3>Login / Register</h3>
-      <div class="row">
-        <input id="fullName" placeholder="Full name (for register)" />
-        <input id="llave" placeholder="Llave (6 chars, e.g. AREPA1)" maxlength="6" />
-        <button id="btnLogin" class="secondary">Login</button>
-        <button id="btnRegister">Register</button>
+    <!-- ========== VISTA 1: AUTENTICACIÓN ========== -->
+    <section id="view-auth" class="card">
+      <div class="stack" style="gap:14px">
+        <h2 style="margin:0">Bienvenido 👋</h2>
+        <p class="muted" style="margin:0">
+          Regístrate o inicia sesión con tu <strong>llave de 6 caracteres</strong> (comparte esta llave con tus amigos para enviar/solicitar empanadas).
+        </p>
+
+        <div class="tabs" role="tablist">
+          <button id="tab-login" class="tab active" role="tab" aria-selected="true">Iniciar sesión</button>
+          <button id="tab-register" class="tab" role="tab" aria-selected="false">Registrarse</button>
+        </div>
+
+        <!-- Login -->
+        <div id="pane-login" class="stack">
+          <label for="llaveLogin">Llave (6 caracteres)</label>
+          <input id="llaveLogin" inputmode="latin" maxlength="6" placeholder="EJEMPLO: AREPA1" autocomplete="one-time-code" />
+          <button id="btnLogin" class="ok">Entrar</button>
+        </div>
+
+        <!-- Register -->
+        <div id="pane-register" class="stack" hidden>
+          <label for="fullName">Nombre completo</label>
+          <input id="fullName" placeholder="Sofía Pérez" />
+          <label for="llave">Elige tu llave (6 caracteres A-Z/0-9)</label>
+          <input id="llave" inputmode="latin" maxlength="6" placeholder="AREPA1" />
+          <button id="btnRegister">Crear cuenta</button>
+        </div>
+
+        <p id="meAuth" class="muted"></p>
       </div>
-      <p class="muted">Tip: llave is your simple code. Share it with friends so they can send or request empanadas.</p>
-      <p id="me" class="muted"></p>
     </section>
 
-    <section class="card">
-      <h3>Send a pending empanada</h3>
-      <div class="row">
-        <input id="toLlave" placeholder="Recipient llave (e.g. TACO42)" maxlength="6" />
-        <input id="sendQty" type="number" value="1" min="1" style="width:80px" />
-        <input id="sendMsg" placeholder="Message (optional)" />
-        <button id="btnSend">Send</button>
+    <!-- ========== VISTA 2: APP ========== -->
+    <section id="view-app" hidden>
+      <div class="topbar">
+        <div>
+          <div class="hello" id="helloUser">Hola 👋</div>
+          <div class="muted" id="helloLlave"></div>
+        </div>
+        <div style="display:flex; gap:8px">
+          <button id="btnIrStats" class="ghost">Estadísticas</button>
+          <button id="btnSalir" class="ghost">Salir</button>
+        </div>
       </div>
-    </section>
 
-    <section class="card">
-      <h3>Request an empanada</h3>
-      <div class="row">
-        <input id="fromLlave" placeholder="Who should owe you? (llave)" maxlength="6" />
-        <input id="reqQty" type="number" value="1" min="1" style="width:80px" />
-        <input id="reqMsg" placeholder="Message (optional)" />
-        <button id="btnRequest" class="secondary">Request</button>
+      <div class="grid-2">
+        <section class="card">
+          <h3 style="margin-top:0">Enviar empanada pendiente</h3>
+          <div class="stack">
+            <label for="toLlave">Llave del receptor</label>
+            <input id="toLlave" maxlength="6" placeholder="Ej: TACO42" />
+            <div class="row">
+              <div style="flex:1">
+                <label for="sendQty">Cantidad</label>
+                <input id="sendQty" type="number" inputmode="numeric" value="1" min="1" />
+              </div>
+              <div style="flex:3">
+                <label for="sendMsg">Mensaje (opcional)</label>
+                <input id="sendMsg" placeholder="Por las fotocopias 🙏" />
+              </div>
+            </div>
+            <button id="btnSend">Enviar</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-top:0">Solicitar empanada</h3>
+          <div class="stack">
+            <label for="fromLlave">Pídesela a (llave)</label>
+            <input id="fromLlave" maxlength="6" placeholder="Ej: AREPA1" />
+            <div class="row">
+              <div style="flex:1">
+                <label for="reqQty">Cantidad</label>
+                <input id="reqQty" type="number" inputmode="numeric" value="1" min="1" />
+              </div>
+              <div style="flex:3">
+                <label for="reqMsg">Mensaje (opcional)</label>
+                <input id="reqMsg" placeholder="Por el favorcito de ayer 👀" />
+              </div>
+            </div>
+            <button id="btnRequest" class="secondary">Solicitar</button>
+          </div>
+        </section>
       </div>
-    </section>
 
-    <section class="card">
-      <h3>Your stats</h3>
-      <div id="stats"></div>
-    </section>
+      <section class="card">
+        <h3 style="margin-top:0">Tus estadísticas</h3>
+        <div id="stats" class="stack"></div>
+      </section>
 
-    <section class="card">
-      <h3>All your debts</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>When</th>
-            <th>Who owes whom</th>
-            <th>Qty</th>
-            <th>Message</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="debts"></tbody>
-      </table>
+      <section class="card">
+        <h3 style="margin-top:0">Tus deudas</h3>
+        <div class="space"></div>
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Quién debe a quién</th>
+              <th>Cant.</th>
+              <th>Mensaje</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="debts"></tbody>
+        </table>
+      </section>
     </section>
   </main>
 
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
   <script>
-    const $ = (s) => document.querySelector(s);
+    // ===== Utilidades =====
+    const $ = (s)=>document.querySelector(s);
+    const show = (el)=> el.removeAttribute('hidden');
+    const hide = (el)=> el.setAttribute('hidden','');
+    const LLAVE_RE = /^[A-Z0-9]{6}$/;
+    function up(s){ return String(s||'').trim().toUpperCase(); }
+    function toast(msg){
+      const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+      clearTimeout(window.__toast); window.__toast = setTimeout(()=> t.classList.remove('show'), 2100);
+    }
+    function fmtDate(iso){ try{ return new Date(iso).toLocaleString(); }catch{return iso} }
     let me = null;
-    let authHeaders = () => me ? { 'X-LLAVE': me.llave } : {};
+    const authHeaders = ()=> me ? {'X-LLAVE': me.llave } : {};
 
-    function fmtDate(iso){ const d = new Date(iso); return d.toLocaleString(); }
-    function statusPill(d){
-      if (d.settled_at) return '<span class="pill status-settled">settled</span>';
-      if (d.sender_marked_paid || d.recipient_marked_paid) return '<span class="pill status-half">half-marked</span>';
-      return '<span class="pill status-pending">pending</span>';
-    }
-
-    async function login() {
-      const llave = $('#llave').value.trim().toUpperCase();
-      if (!/^[A-Z0-9]{6}$/.test(llave)) return alert('Llave must be 6 chars [A-Z0-9].');
-      const r = await fetch('/api/users/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({llave})});
-      if (!r.ok) return alert('Unknown llave');
-      me = await r.json();
-      $('#me').textContent = `Logged in as ${me.full_name} (${me.llave})`;
-      localStorage.setItem('llave', me.llave);
+    // ===== Navegación de vistas =====
+    function gotoApp(){
+      hide($('#view-auth')); show($('#view-app'));
+      $('#helloUser').textContent = `Hola, ${me.full_name} 👋`;
+      $('#helloLlave').textContent = `Tu llave: ${me.llave}`;
       renderAll();
     }
+    function gotoAuth(){
+      show($('#view-auth')); hide($('#view-app'));
+    }
 
-    async function register() {
+    // ===== Tabs Auth =====
+    const tabLogin = $('#tab-login');
+    const tabRegister = $('#tab-register');
+    const paneLogin = $('#pane-login');
+    const paneRegister = $('#pane-register');
+    tabLogin.onclick = ()=>{ tabLogin.classList.add('active'); tabRegister.classList.remove('active'); paneLogin.hidden=false; paneRegister.hidden=true; };
+    tabRegister.onclick = ()=>{ tabRegister.classList.add('active'); tabLogin.classList.remove('active'); paneRegister.hidden=false; paneLogin.hidden=true; };
+
+    // ===== API =====
+    async function api(path, options={}){
+      const r = await fetch(path, options);
+      let body = null;
+      try { body = await r.json(); } catch {}
+      if(!r.ok) throw new Error((body && body.error) || `Error HTTP ${r.status}`);
+      return body;
+    }
+
+    // ===== Auth =====
+    async function login(){
+      const llave = up($('#llaveLogin').value);
+      if(!LLAVE_RE.test(llave)) return toast('La llave debe tener 6 caracteres A-Z/0-9');
+      try{
+        me = await api('/api/users/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({llave}) });
+        localStorage.setItem('llave', me.llave);
+        $('#meAuth').textContent = `Sesión iniciada como ${me.full_name} (${me.llave})`;
+        toast('¡Bienvenido!');
+        gotoApp();
+      }catch(e){ toast(e.message); }
+    }
+
+    async function register(){
       const full_name = $('#fullName').value.trim();
-      const llave = $('#llave').value.trim().toUpperCase();
-      if (!full_name) return alert('Full name required');
-      if (!/^[A-Z0-9]{6}$/.test(llave)) return alert('Llave must be 6 chars [A-Z0-9].');
-      const r = await fetch('/api/users/register', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({full_name, llave})});
-      const body = await r.json();
-      if (!r.ok) return alert(body.error || 'Register failed');
-      me = body;
-      $('#me').textContent = `Registered as ${me.full_name} (${me.llave})`;
-      localStorage.setItem('llave', me.llave);
-      renderAll();
+      const llave = up($('#llave').value);
+      if(!full_name) return toast('Ingresa tu nombre completo');
+      if(!LLAVE_RE.test(llave)) return toast('La llave debe tener 6 caracteres A-Z/0-9');
+      try{
+        me = await api('/api/users/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({full_name, llave}) });
+        localStorage.setItem('llave', me.llave);
+        $('#meAuth').textContent = `Registrado como ${me.full_name} (${me.llave})`;
+        toast('¡Cuenta creada!');
+        gotoApp();
+      }catch(e){ toast(e.message); }
+    }
+
+    // ===== Deudas =====
+    function statusPill(d){
+      if(d.settled_at) return '<span class="pill status-settled">pagada</span>';
+      if(d.sender_marked_paid || d.recipient_marked_paid) return '<span class="pill status-half">a confirmar</span>';
+      return '<span class="pill status-pending">pendiente</span>';
     }
 
     async function listDebts(){
-      if (!me) return;
-      const r = await fetch('/api/debts', { headers: authHeaders() });
-      const debts = await r.json();
-      $('#debts').innerHTML = debts.map(d => `
-        <tr>
-          <td>${fmtDate(d.created_at)}</td>
-          <td>
-            <strong>${d.sender.full_name} (${d.sender.llave})</strong>
-            owes
-            <strong>${d.recipient.full_name} (${d.recipient.llave})</strong>
-          </td>
-          <td>${d.qty}</td>
-          <td>${d.message || ''}</td>
-          <td>${statusPill(d)}</td>
-          <td>
-            ${!d.settled_at ? `<button data-id="${d.id}" class="mark">Mark paid</button>` : ''}
-            ${(!d.settled_at && ((d.sender.llave===me.llave && d.sender_marked_paid) || (d.recipient.llave===me.llave && d.recipient_marked_paid))) ? `<button data-id="${d.id}" class="unmark warn">Undo my mark</button>` : ''}
-          </td>
-        </tr>
-      `).join('');
+      if(!me) return;
+      try{
+        const debts = await api('/api/debts', { headers: authHeaders() });
+        $('#debts').innerHTML = debts.map(d => `
+          <tr>
+            <td>${fmtDate(d.created_at)}</td>
+            <td>
+              <strong>${d.sender.full_name} (${d.sender.llave})</strong>
+              debe a
+              <strong>${d.recipient.full_name} (${d.recipient.llave})</strong>
+            </td>
+            <td>${d.qty}</td>
+            <td>${d.message? d.message.replace(/</g,'&lt;') : ''}</td>
+            <td>${statusPill(d)}</td>
+            <td>
+              ${!d.settled_at ? `<button data-id="${d.id}" class="mark ok">Marcar pagada</button>` : ''}
+              ${(!d.settled_at && ((d.sender.llave===me.llave && d.sender_marked_paid) || (d.recipient.llave===me.llave && d.recipient_marked_paid))) ? `<button data-id="${d.id}" class="unmark warn">Deshacer mi marca</button>` : ''}
+            </td>
+          </tr>
+        `).join('');
 
-      document.querySelectorAll('button.mark').forEach(b=>b.onclick = async (e)=>{
-        const id = b.getAttribute('data-id');
-        const r = await fetch(`/api/debts/${id}/mark`, {method:'POST', headers: { ...authHeaders(), 'Content-Type':'application/json' }});
-        if (!r.ok) { const body = await r.json(); return alert(body.error || 'Error'); }
-        renderAll();
-      });
+        document.querySelectorAll('button.mark').forEach(b=>b.onclick = async ()=>{
+          const id = b.getAttribute('data-id');
+          try{ await api(`/api/debts/${id}/mark`, { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' } }); toast('Marcada como pagada'); renderAll(); }
+          catch(e){ toast(e.message); }
+        });
 
-      document.querySelectorAll('button.unmark').forEach(b=>b.onclick = async (e)=>{
-        const id = b.getAttribute('data-id');
-        const r = await fetch(`/api/debts/${id}/unmark`, {method:'POST', headers: { ...authHeaders(), 'Content-Type':'application/json' }});
-        if (!r.ok) { const body = await r.json(); return alert(body.error || 'Error'); }
-        renderAll();
-      });
+        document.querySelectorAll('button.unmark').forEach(b=>b.onclick = async ()=>{
+          const id = b.getAttribute('data-id');
+          try{ await api(`/api/debts/${id}/unmark`, { method:'POST', headers:{ ...authHeaders(), 'Content-Type':'application/json' } }); toast('Marca deshecha'); renderAll(); }
+          catch(e){ toast(e.message); }
+        });
+
+      }catch(e){ toast(e.message); }
     }
 
     async function sendDebt(){
-      const to_llave = $('#toLlave').value.trim().toUpperCase();
-      const qty = parseInt($('#sendQty').value || '1', 10);
+      const to_llave = up($('#toLlave').value);
+      const qty = Math.max(1, parseInt($('#sendQty').value||'1',10));
       const message = $('#sendMsg').value.trim();
-      if (!/^[A-Z0-9]{6}$/.test(to_llave)) return alert('Recipient llave must be 6 chars');
-      const r = await fetch('/api/debts/send', {method:'POST', headers:{...authHeaders(), 'Content-Type':'application/json'}, body:JSON.stringify({to_llave, qty, message})});
-      const body = await r.json();
-      if (!r.ok) return alert(body.error || 'Send failed');
-      $('#toLlave').value=''; $('#sendQty').value='1'; $('#sendMsg').value='';
-      renderAll();
+      if(!LLAVE_RE.test(to_llave)) return toast('La llave del receptor debe tener 6 caracteres');
+      try{
+        await api('/api/debts/send', { method:'POST', headers:{...authHeaders(), 'Content-Type':'application/json'}, body: JSON.stringify({to_llave, qty, message}) });
+        $('#toLlave').value=''; $('#sendQty').value='1'; $('#sendMsg').value='';
+        toast('Empanada enviada 🥟');
+        renderAll();
+      }catch(e){ toast(e.message); }
     }
 
     async function requestDebt(){
-      const from_llave = $('#fromLlave').value.trim().toUpperCase();
-      const qty = parseInt($('#reqQty').value || '1', 10);
+      const from_llave = up($('#fromLlave').value);
+      const qty = Math.max(1, parseInt($('#reqQty').value||'1',10));
       const message = $('#reqMsg').value.trim();
-      if (!/^[A-Z0-9]{6}$/.test(from_llave)) return alert('Llave must be 6 chars');
-      const r = await fetch('/api/debts/request', {method:'POST', headers:{...authHeaders(), 'Content-Type':'application/json'}, body:JSON.stringify({from_llave, qty, message})});
-      const body = await r.json();
-      if (!r.ok) return alert(body.error || 'Request failed');
-      $('#fromLlave').value=''; $('#reqQty').value='1'; $('#reqMsg').value='';
-      renderAll();
+      if(!LLAVE_RE.test(from_llave)) return toast('La llave debe tener 6 caracteres');
+      try{
+        await api('/api/debts/request', { method:'POST', headers:{...authHeaders(), 'Content-Type':'application/json'}, body: JSON.stringify({from_llave, qty, message}) });
+        $('#fromLlave').value=''; $('#reqQty').value='1'; $('#reqMsg').value='';
+        toast('Solicitud enviada 📩');
+        renderAll();
+      }catch(e){ toast(e.message); }
     }
 
     async function loadStats(){
-      if (!me) return $('#stats').innerHTML = '';
-      const r = await fetch('/api/stats/me', { headers: authHeaders() });
-      const s = await r.json();
-
-      const rows = Object.entries(s.perFriend).map(([ll, v])=>{
-        return `<tr><td>${v.name} (${ll})</td><td>${v.iOwe}</td><td>${v.oweMe}</td><td>${v.oweMe - v.iOwe}</td></tr>`;
-      }).join('');
-
-      $('#stats').innerHTML = `
-        <p><strong>I owe:</strong> ${s.iOwe} • <strong>Owe me:</strong> ${s.oweMe} • <strong>Net:</strong> ${s.net}</p>
-        <table>
-          <thead><tr><th>Friend</th><th>I owe</th><th>Owe me</th><th>Net</th></tr></thead>
-          <tbody>${rows || '<tr><td colspan="4">No pending debts 🎉</td></tr>'}</tbody>
-        </table>`;
+      if(!me) return $('#stats').innerHTML='';
+      try{
+        const s = await api('/api/stats/me', { headers: authHeaders() });
+        const rows = Object.entries(s.perFriend).map(([ll, v]) =>
+          `<tr><td>${v.name} (${ll})</td><td>${v.iOwe}</td><td>${v.oweMe}</td><td>${v.oweMe - v.iOwe}</td></tr>`
+        ).join('');
+        $('#stats').innerHTML = `
+          <p><strong>Debo:</strong> ${s.iOwe} • <strong>Me deben:</strong> ${s.oweMe} • <strong>Neto:</strong> ${s.net}</p>
+          <table>
+            <thead><tr><th>Amigo</th><th>Debo</th><th>Me debe</th><th>Neto</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="4">Sin deudas pendientes 🎉</td></tr>'}</tbody>
+          </table>`;
+      }catch(e){ toast(e.message); }
     }
 
-    async function renderAll(){
-      await Promise.all([listDebts(), loadStats()]);
-    }
+    async function renderAll(){ await Promise.all([listDebts(), loadStats()]); }
 
-    // wire
+    // ===== Wire =====
     $('#btnLogin').onclick = login;
     $('#btnRegister').onclick = register;
     $('#btnSend').onclick = sendDebt;
     $('#btnRequest').onclick = requestDebt;
+    $('#btnSalir').onclick = ()=>{ localStorage.removeItem('llave'); me=null; toast('Sesión cerrada'); gotoAuth(); };
+    $('#btnIrStats').onclick = ()=>{ window.scrollTo({top:0, behavior:'smooth'}); toast('Arriba están tus estadísticas'); };
 
-    // auto login from localStorage
+    // Autologin
     const saved = localStorage.getItem('llave');
-    if (saved) { $('#llave').value = saved; login(); }
+    if(saved){
+      // Intenta sesión directa para caer de una al dashboard
+      (async()=>{ try{ me = await api('/api/users/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({llave: saved}) }); gotoApp(); }catch{} })();
+    }
   </script>
 </body>
 </html>
