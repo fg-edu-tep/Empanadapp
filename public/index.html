@@ -49,20 +49,30 @@
       background:var(--surface); border-radius:var(--radius);
       box-shadow: var(--shadow); padding:16px; margin:12px 0;
     }
-
     /* Forms */
     .row{ display:flex; gap:10px; flex-wrap:wrap; }
     .stack{ display:flex; flex-direction:column; gap:10px; }
     label{ font-size:.9rem; color:var(--muted) }
     input,button,textarea,select{
-      width:100%; padding:12px 14px;
-      border:1px solid #e5e7eb; border-radius:12px;
-      font:inherit; background:#fff;
+      width:100%;
+      padding:12px 14px;
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      font:inherit;
+      background:#ffffff;  /* ← Corregido */
+      color:var(--text);   /* ← Asegura contraste legible */
     }
-    input:focus, textarea:focus, select:focus{ outline:none; box-shadow:var(--ring); border-color:#f59e0b; }
+    input:focus, textarea:focus, select:focus{
+      outline:none;
+      box-shadow:var(--ring);
+      border-color:#f59e0b;
+    }
     button{
-      cursor:pointer; border:0; font-weight:700;
-      background:var(--brand-2); color:#2b1600;
+      cursor:pointer;
+      border:0;
+      font-weight:700;
+      background:var(--brand-2);
+      color:#2b1600;
       transition: transform .02s ease, box-shadow .2s ease;
       box-shadow: 0 6px 16px rgba(251,133,0,.25);
     }
